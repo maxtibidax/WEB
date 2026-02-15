@@ -1,0 +1,10 @@
+# Секреты
+.env
+
+# Папки IDE (если пользуешься VS Code или PHPStorm)
+.idea/
+.vscode/
+
+# Системные файлы Windows
+Thumbs.db
+Desktop.ini
