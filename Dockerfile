@@ -1,8 +1,9 @@
-# Берем официальный образ PHP с Apache (веб-сервером)
 FROM php:8.2-apache
 
-# Устанавливаем расширения для работы с базой данных (PDO и MySQLi)
-RUN docker-php-ext-install pdo pdo_mysql mysqli
+# Устанавливаем системную библиотеку libpq-dev (нужна для компиляции драйвера Postgres)
+# И устанавливаем расширения pdo_pgsql для PHP
+RUN apt-get update && apt-get install -y libpq-dev \
+    && docker-php-ext-install pdo pdo_pgsql
 
-# Включаем модуль rewrite для Apache (пригодится в будущем)
+# Включаем ЧПУ (на будущее)
 RUN a2enmod rewrite

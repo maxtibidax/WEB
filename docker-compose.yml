@@ -1,40 +1,38 @@
 version: '3.8'
 
 services:
-
-  # 1. Наше PHP приложение (Веб-сервер)
   app:
-    build: .                # Собираем образ из Dockerfile в текущей папке
+    build: .
     container_name: php-app
     ports:
-      - "80:80"             # Порт 80 на компе -> Порт 80 в контейнере
+      - "80:80"
     volumes:
-      - ./src:/var/www/html # Папка src на компе -> папка сайта в контейнере
-    depends_on:
-      - db                  # Запускать только после базы данных
-
-  # 2. База данных MySQL
-  db:
-    image: mysql:8.0
-    container_name: mysql-db
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword  # Пароль главного админа
-      MYSQL_DATABASE: my_database        # База создастся сама
-      MYSQL_USER: user                   # Создаем обычного юзера
-      MYSQL_PASSWORD: password           # Пароль юзера
-    ports:
-      - "3306:3306"
-
-  # 3. phpMyAdmin (Веб-интерфейс для базы)
-  pma:
-    # ВНИМАНИЕ: Здесь должно быть двоеточие!
-    # И проверь, что твой второй Dockerfile действительно лежит в папке src
-    build: ./src
-    container_name: phpmyadmin
-    environment:
-      PMA_HOST: db          # Хост базы данных
-      MYSQL_ROOT_PASSWORD: rootpassword
-    ports:
-      - "8080:80"           # Будет доступен по адресу localhost:8080
+      - ./src:/var/www/html
     depends_on:
       - db
+
+  db:
+    image: postgres:15-alpine
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
