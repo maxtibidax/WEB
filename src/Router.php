@@ -1,25 +1,18 @@
 <?php
-// Router.php
-
 class Router {
     private $routes = [];
 
-    // Добавление маршрута
-    public function add($path, $action) {
-        $this->routes[$path] = $action;
-    }
+    // Добавили разделение на GET и POST методы
+    public function get($path, $action) { $this->routes['GET'][$path] = $action; }
+    public function post($path, $action) { $this->routes['POST'][$path] = $action; }
 
-    // Обработка текущего URL
-    public function dispatch($uri) {
-        // Отрезаем GET-параметры (/?search_brand=BMW -> /)
+    public function dispatch($uri, $method) {
         $path = parse_url($uri, PHP_URL_PATH);
-
-        if (array_key_exists($path, $this->routes)) {
-            // Вызываем функцию-обработчик маршрута
-            call_user_func($this->routes[$path]);
+        if (isset($this->routes[$method][$path])) {
+            call_user_func($this->routes[$method][$path]);
         } else {
             http_response_code(404);
-            echo "<h1>404 - Страница не найдена</h1>";
+            echo "404 - Страница не найдена";
         }
     }
 }

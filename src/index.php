@@ -1,21 +1,16 @@
 <?php
-// index.php
-
 require_once 'config/database.php';
 require_once 'Router.php';
-require_once 'controllers/CarController.php';
+require_once 'controllers/MainController.php';
 
-// Инициализация БД
 $pdo = getDbConnection();
-
-// Инициализация роутера
 $router = new Router();
+$controller = new MainController($pdo);
 
 // Настраиваем маршруты
-$router->add('/', function() use ($pdo) {
-    $controller = new CarController($pdo);
-    $controller->index();
-});
+$router->get('/', function() use ($controller) { $controller->index(); });
+$router->post('/add-car', function() use ($controller) { $controller->addCar(); });
+$router->post('/sell-car', function() use ($controller) { $controller->sellCar(); });
 
-// Запускаем роутинг
-$router->dispatch($_SERVER['REQUEST_URI']);
+// Запускаем роутер
+$router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
