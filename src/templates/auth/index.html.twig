@@ -1,0 +1,86 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Авторизация | Автосалон{% endblock %}
+
+{% block body %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="text-center mb-4">
+                <h1 class="mb-2">Лабораторная 5: авторизация и личный кабинет</h1>
+                <p class="text-muted mb-0">Зарегистрируйтесь или войдите, чтобы работать с системой автосалона.</p>
+            </div>
+
+            {% for message in app.flashes('success') %}
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+
+            {% set errors = app.flashes('danger') %}
+            {% if errors %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <strong>Ошибка:</strong>
+                    <ul class="mb-0 mt-2">
+                        {% for error in errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endif %}
+
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-primary text-white">Вход</div>
+                        <div class="card-body">
+                            <form action="{{ path('app_login') }}" method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token('app') }}">
+                                <div class="mb-3">
+                                    <label for="login-email" class="form-label">Email</label>
+                                    <input id="login-email" type="email" name="email" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="login-password" class="form-label">Пароль</label>
+                                    <input id="login-password" type="password" name="password" class="form-control" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">Войти</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-success text-white">Регистрация</div>
+                        <div class="card-body">
+                            <form action="{{ path('app_register') }}" method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token('app') }}">
+                                <div class="mb-3">
+                                    <label for="register-name" class="form-label">Имя</label>
+                                    <input id="register-name" type="text" name="full_name" class="form-control" maxlength="150" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="register-email" class="form-label">Email</label>
+                                    <input id="register-email" type="email" name="email" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="register-password" class="form-label">Пароль</label>
+                                    <input id="register-password" type="password" name="password" class="form-control" minlength="6" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="register-password-confirmation" class="form-label">Повторите пароль</label>
+                                    <input id="register-password-confirmation" type="password" name="password_confirmation" class="form-control" minlength="6" required>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100">Зарегистрироваться</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

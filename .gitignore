@@ -1,5 +1,5 @@
 # Секреты
-.env
+/.env
 
 # Папки IDE (если пользуешься VS Code или PHPStorm)
 .idea/
@@ -8,3 +8,11 @@
 # Системные файлы Windows
 Thumbs.db
 Desktop.ini
+
+# Зависимости Composer
+src/vendor/
+
+# Symfony
+src/var/
+src/.env.local
+src/.env.*.local

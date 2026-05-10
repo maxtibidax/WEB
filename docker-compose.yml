@@ -1,13 +1,22 @@
-version: '3.8'
-
 services:
   app:
     build: .
     container_name: php-app
     ports:
       - "80:80"
+    environment:
+      APP_ENV: dev
+      APP_SECRET: ${APP_SECRET:-change-me-for-local-dev}
+      DB_HOST: db
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
     volumes:
       - ./src:/var/www/html
+      - app_vendor:/var/www/html/vendor
+      - app_var:/var/www/html/var
+    working_dir: /var/www/html
+    command: sh -c "composer install --no-interaction --prefer-dist --no-progress && mkdir -p var/cache var/log && chown -R www-data:www-data var && apache2-foreground"
     depends_on:
       - db
 
@@ -36,3 +45,5 @@ services:
 
 volumes:
   pgdata:
+  app_vendor:
+  app_var:

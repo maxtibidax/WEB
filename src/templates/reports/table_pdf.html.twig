@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page { margin: 28px; }
+        body { font-family: "DejaVu Sans", sans-serif; color: #203040; font-size: 12px; }
+        .report-title { background: #1f4e79; color: #ffffff; padding: 16px 20px; border-radius: 8px; }
+        h1 { font-size: 24px; margin: 0 0 6px; }
+        .meta { font-size: 11px; opacity: .9; }
+        .summary { margin: 16px 0; color: #1f4e79; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        th { background: #2e75b6; color: #ffffff; padding: 10px 8px; text-align: left; }
+        td { border: 1px solid #b7c9d6; padding: 8px; vertical-align: top; word-wrap: break-word; }
+        tr:nth-child(even) td { background: #eaf3f8; }
+        .empty { text-align: center; color: #5c6f7d; padding: 24px; }
+    </style>
+</head>
+<body>
+    <div class="report-title">
+        <h1>{{ title }}</h1>
+        <div class="meta">Сформировано: {{ generatedAt }}</div>
+    </div>
+    <div class="summary">Строк в отчете: {{ rows|length }}</div>
+    <table>
+        <thead>
+            <tr>
+                {% for header in headers %}
+                    <th>{{ header }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% if rows is empty %}
+                <tr>
+                    <td class="empty" colspan="{{ headers|length > 0 ? headers|length : 1 }}">Нет данных для отчета</td>
+                </tr>
+            {% endif %}
+            {% for row in rows %}
+                <tr>
+                    {% for cell in row %}
+                        <td>{{ cell }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

@@ -1,0 +1,360 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Личный кабинет | Автосалон{% endblock %}
+
+{% block stylesheets %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+    body { color: #203040; }
+    .report-metric { border: 0; border-left: 5px solid var(--metric-color); }
+    .report-metric .metric-icon {
+        align-items: center;
+        background: var(--metric-bg);
+        border-radius: 8px;
+        color: var(--metric-color);
+        display: inline-flex;
+        font-size: 1.35rem;
+        height: 42px;
+        justify-content: center;
+        width: 42px;
+    }
+    .metric-blue { --metric-color: #1f5fbf; --metric-bg: #e8f1ff; }
+    .metric-green { --metric-color: #188253; --metric-bg: #e6f6ef; }
+    .metric-gold { --metric-color: #ad6b00; --metric-bg: #fff3d8; }
+    .metric-rose { --metric-color: #b23a48; --metric-bg: #fdebed; }
+    .chart-box { min-height: 280px; }
+    .chart-box canvas { max-height: 260px; }
+    .report-actions .btn { min-width: 92px; }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+        <div>
+            <h1 class="mb-1">Личный кабинет автосалона</h1>
+            <p class="text-muted mb-0">
+                Вы вошли как {{ user.full_name }} ({{ roleLabels[user.role]|default(user.role) }}).
+            </p>
+        </div>
+        <form action="{{ path('app_logout') }}" method="POST" class="mb-0">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token('app') }}">
+            <button type="submit" class="btn btn-outline-secondary">Выйти</button>
+        </form>
+    </div>
+
+    {% for message in app.flashes('success') %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+
+    {% set errors = app.flashes('danger') %}
+    {% if errors %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Ошибка!</strong> Пожалуйста, исправьте следующее:
+            <ul class="mb-0 mt-1">
+                {% for error in errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
+
+    {% if isAdmin %}
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-xl-3">
+                <div class="card shadow-sm report-metric metric-blue h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start gap-3">
+                            <div>
+                                <div class="text-muted small">Авто в наличии</div>
+                                <div class="fs-3 fw-bold">{{ availableCarsCount }}</div>
+                            </div>
+                            <span class="metric-icon"><i class="bi bi-car-front"></i></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card shadow-sm report-metric metric-green h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start gap-3">
+                            <div>
+                                <div class="text-muted small">Стоимость склада</div>
+                                <div class="fs-3 fw-bold">${{ availableCarsTotal|number_format(0, '.', ',') }}</div>
+                            </div>
+                            <span class="metric-icon"><i class="bi bi-cash-stack"></i></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card shadow-sm report-metric metric-gold h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start gap-3">
+                            <div>
+                                <div class="text-muted small">Продаж</div>
+                                <div class="fs-3 fw-bold">{{ salesCount }}</div>
+                            </div>
+                            <span class="metric-icon"><i class="bi bi-receipt"></i></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card shadow-sm report-metric metric-rose h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start gap-3">
+                            <div>
+                                <div class="text-muted small">Средний чек</div>
+                                <div class="fs-3 fw-bold">${{ averageSale|number_format(0, '.', ',') }}</div>
+                            </div>
+                            <span class="metric-icon"><i class="bi bi-graph-up-arrow"></i></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <div class="col-lg-7">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-white fw-semibold">Машины по брендам</div>
+                    <div class="card-body chart-box">
+                        <canvas id="brandChart" aria-label="Машины по брендам"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-white fw-semibold">Готовые отчеты</div>
+                    <div class="card-body">
+                        <div class="d-grid gap-3 report-actions">
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                                <span class="fw-semibold">Автомобили в наличии</span>
+                                <div class="btn-group" role="group" aria-label="Скачать отчет по автомобилям">
+                                    <a class="btn btn-outline-secondary btn-sm" href="{{ path('app_report', {type: 'cars', format: 'csv'}) }}"><i class="bi bi-filetype-csv"></i> CSV</a>
+                                    <a class="btn btn-outline-primary btn-sm" href="{{ path('app_report', {type: 'cars', format: 'excel'}) }}"><i class="bi bi-file-earmark-spreadsheet"></i> Excel</a>
+                                    <a class="btn btn-outline-danger btn-sm" href="{{ path('app_report', {type: 'cars', format: 'pdf'}) }}"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
+                                </div>
+                            </div>
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                                <span class="fw-semibold">История продаж</span>
+                                <div class="btn-group" role="group" aria-label="Скачать отчет по продажам">
+                                    <a class="btn btn-outline-secondary btn-sm" href="{{ path('app_report', {type: 'sales', format: 'csv'}) }}"><i class="bi bi-filetype-csv"></i> CSV</a>
+                                    <a class="btn btn-outline-primary btn-sm" href="{{ path('app_report', {type: 'sales', format: 'excel'}) }}"><i class="bi bi-file-earmark-spreadsheet"></i> Excel</a>
+                                    <a class="btn btn-outline-danger btn-sm" href="{{ path('app_report', {type: 'sales', format: 'pdf'}) }}"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="chart-box">
+                            <canvas id="salesChart" aria-label="Продажи по месяцам"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-dark text-white">Профиль администратора</div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5">Имя</dt>
+                            <dd class="col-sm-7">{{ user.full_name }}</dd>
+                            <dt class="col-sm-5">Email</dt>
+                            <dd class="col-sm-7">{{ user.email }}</dd>
+                            <dt class="col-sm-5">Роль</dt>
+                            <dd class="col-sm-7"><span class="badge bg-danger">{{ roleLabels[user.role]|default(user.role) }}</span></dd>
+                            <dt class="col-sm-5">Создан</dt>
+                            <dd class="col-sm-7">{{ user.created_at ? user.created_at|date('d.m.Y H:i') : 'Нет данных' }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-info text-dark">Права доступа</div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="border rounded p-3 h-100 bg-white">
+                                    <h5 class="mb-2">Пользователь</h5>
+                                    <p class="mb-0 text-muted">Может только просматривать автомобили в наличии.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="border rounded p-3 h-100 bg-white">
+                                    <h5 class="mb-2">Администратор</h5>
+                                    <p class="mb-0 text-muted">Видит клиентов, историю продаж, добавляет автомобили и оформляет продажи.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">Добавить авто в салон</div>
+                    <div class="card-body">
+                        <form action="{{ path('app_add_car') }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token('app') }}">
+                            <div class="mb-2">
+                                <label class="form-label">Бренд</label>
+                                <select name="brand_id" class="form-select" required>
+                                    {% for brand in brands %}
+                                        <option value="{{ brand.id }}">{{ brand.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Модель</label>
+                                <input type="text" name="model_name" class="form-control" maxlength="100" required>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Год</label>
+                                <input type="number" name="production_year" class="form-control" min="1900" max="{{ maxProductionYear }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Цена ($)</label>
+                                <input type="number" step="0.01" name="price" class="form-control" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Добавить</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                {{ include('dashboard/_cars_table.html.twig') }}
+            </div>
+        </div>
+
+        <hr>
+
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">Оформить продажу</div>
+                    <div class="card-body">
+                        {% if availableCars and clients %}
+                            <form action="{{ path('app_sell_car') }}" method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token('app') }}">
+                                <div class="mb-2">
+                                    <label class="form-label">Выберите машину (из наличия)</label>
+                                    <select name="car_id" class="form-select" required>
+                                        {% for car in availableCars %}
+                                            <option value="{{ car.id }}">{{ car.brand_name }} {{ car.model_name }} (${{ car.price }})</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label">Клиент</label>
+                                    <select name="client_id" class="form-select" required>
+                                        {% for client in clients %}
+                                            <option value="{{ client.id }}">{{ client.full_name }} ({{ client.phone }})</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Итоговая цена сделки ($)</label>
+                                    <input type="number" step="0.01" name="final_price" class="form-control" placeholder="С учетом скидок" required>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100">Продать авто</button>
+                            </form>
+                        {% else %}
+                            <div class="alert alert-info mb-0">Для оформления продажи нужны доступные автомобили и клиенты.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+                    <h4 class="mb-0">История продаж</h4>
+                    <div class="btn-group" role="group" aria-label="Скачать отчет по продажам">
+                        <a class="btn btn-outline-success btn-sm" href="{{ path('app_report', {type: 'sales', format: 'csv'}) }}">CSV</a>
+                        <a class="btn btn-outline-success btn-sm" href="{{ path('app_report', {type: 'sales', format: 'excel'}) }}">Excel</a>
+                        <a class="btn btn-outline-success btn-sm" href="{{ path('app_report', {type: 'sales', format: 'pdf'}) }}">PDF</a>
+                    </div>
+                </div>
+                <table class="table table-bordered bg-white">
+                    <thead class="table-success">
+                        <tr><th>ID чека</th><th>Дата</th><th>Клиент</th><th>Автомобиль</th><th>Сумма сделки</th></tr>
+                    </thead>
+                    <tbody>
+                        {% if salesHistory is empty %}
+                            <tr><td colspan="5" class="text-center">Пока нет продаж</td></tr>
+                        {% endif %}
+                        {% for sale in salesHistory %}
+                            <tr>
+                                <td>#{{ sale.id }}</td>
+                                <td>{{ sale.sale_date|date('d.m.Y H:i') }}</td>
+                                <td>{{ sale.client_name }}</td>
+                                <td>{{ sale.brand_name }} {{ sale.model_name }}</td>
+                                <td class="fw-bold text-success">${{ sale.final_price|number_format(2, '.', ',') }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info">Обычному пользователю доступен только просмотр автомобилей в наличии.</div>
+        <div class="row">
+            <div class="col-12">
+                {{ include('dashboard/_cars_table.html.twig') }}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{% if isAdmin %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+    const brandLabels = {{ brandChartLabels|json_encode|raw }};
+    const brandValues = {{ brandChartValues|json_encode|raw }};
+    const salesLabels = {{ salesChartLabels|json_encode|raw }};
+    const salesValues = {{ salesChartValues|json_encode|raw }};
+    const chartPalette = ['#1f5fbf', '#188253', '#ad6b00', '#b23a48', '#5b5fc7', '#0f766e'];
+
+    if (document.getElementById('brandChart')) {
+        new Chart(document.getElementById('brandChart'), {
+            type: 'doughnut',
+            data: {
+                labels: brandLabels.length ? brandLabels : ['Нет данных'],
+                datasets: [{ data: brandValues.length ? brandValues : [1], backgroundColor: chartPalette, borderWidth: 0 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '62%' }
+        });
+    }
+
+    if (document.getElementById('salesChart')) {
+        new Chart(document.getElementById('salesChart'), {
+            type: 'bar',
+            data: {
+                labels: salesLabels.length ? salesLabels : ['Нет данных'],
+                datasets: [{ label: 'Сумма продаж', data: salesValues.length ? salesValues : [0], backgroundColor: '#188253', borderRadius: 6 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { callback: value => '$' + Number(value).toLocaleString('ru-RU') } } }
+            }
+        });
+    }
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,27 @@
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+    <h4 class="mb-0">Машины в наличии</h4>
+    <div class="btn-group" role="group" aria-label="Скачать отчет по автомобилям">
+        <a class="btn btn-outline-secondary btn-sm" href="{{ path('app_report', {type: 'cars', format: 'csv'}) }}">CSV</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{{ path('app_report', {type: 'cars', format: 'excel'}) }}">Excel</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{{ path('app_report', {type: 'cars', format: 'pdf'}) }}">PDF</a>
+    </div>
+</div>
+<table class="table table-bordered bg-white">
+    <thead class="table-dark">
+        <tr><th>ID</th><th>Бренд</th><th>Модель</th><th>Год</th><th>Цена</th></tr>
+    </thead>
+    <tbody>
+        {% if availableCars is empty %}
+            <tr><td colspan="5" class="text-center">Нет машин</td></tr>
+        {% endif %}
+        {% for car in availableCars %}
+            <tr>
+                <td>{{ car.id }}</td>
+                <td><span class="badge bg-secondary">{{ car.brand_name }}</span></td>
+                <td>{{ car.model_name }}</td>
+                <td>{{ car.production_year }}</td>
+                <td>${{ car.price|number_format(2, '.', ',') }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
